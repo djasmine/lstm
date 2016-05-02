@@ -63,8 +63,9 @@ local function gru(x, prev_h)
     local p1               = nn.Linear(params.rnn_size, params.rnn_size)(x)
     local hidden_candidate = nn.Tanh()(nn.CAddTable()({p1,p2}))
 
-    local zh               = nn.CMulTable()({update_gate, hidden_candidate})
-    local zhm1             = nn.CMulTable()({nn.AddConstant(1,false)(nn.MulConstant(-1,false)(update_gate)), prev_h})
+    local zh               = nn.CMulTable()({update_gate, prev_h})
+    local zhm              = nn.CMulTable()({update_gate, hidden_candidate})
+    local zhm1             = nn.CSubTable()({hidden_candidate, zhm})
     local next_h           = nn.CAddTable()({zh, zhm1})
 
     return next_h
