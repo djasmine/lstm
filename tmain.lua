@@ -67,6 +67,29 @@ function run_test()
     g_enable_dropout(model.rnns)
 end
 
+function setup(core_net)
+    print("Creating a RNN LSTM network.")
+    local core_network = core_net
+    paramx, paramdx = core_network:getParameters()
+    model.s = {}
+    model.ds = {}
+    model.start_s = {}
+    for j = 0, params.seq_length do
+        model.s[j] = {}
+        for d = 1, 2 * params.layers do
+            model.s[j][d] = transfer_data(torch.zeros(params.batch_size, params.rnn_size))
+        end
+    end
+    for d = 1, 2 * params.layers do
+        model.start_s[d] = transfer_data(torch.zeros(params.batch_size, params.rnn_size))
+        model.ds[d] = transfer_data(torch.zeros(params.batch_size, params.rnn_size))
+    end
+    model.core_network = core_network
+    model.rnns = g_cloneManyTimes(core_network, params.seq_length)
+    model.norm_dw = 0
+    model.err = transfer_data(torch.zeros(params.seq_length))
+end
+
 -- get data in batches
 state_train = {data=transfer_data(ptb.traindataset(params.batch_size))}
 state_valid =  {data=transfer_data(ptb.validdataset(params.batch_size))}
@@ -80,5 +103,6 @@ for _, state in pairs(states) do
     reset_state(state)
 end
 model = torch.load("lstm.model")
+model = setup(model)
 run_test()
 print("Testing is over.")
